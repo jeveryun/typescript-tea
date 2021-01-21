@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { List, Avatar, Typography, Form, Input, Select, DatePicker, Menu, Dropdown, Tabs } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 
@@ -6,6 +6,7 @@ import './App.css';
 import logo from './logo.svg';
 import TodoInput from './TodoInput';
 import { todoListData } from './utils/data';
+import TodoList from './TodoList';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -18,44 +19,35 @@ const menu = (
     </Menu>
 );
 
-function TodoList() {
-    return (
-        <List
-            className="demo-loadmore-list"
-            itemLayout="horizontal"
-            dataSource={todoListData}
-            renderItem={(item, index) => (
-                <List.Item
-                    key={index}
-                    actions={[
-                        <Dropdown overlay={menu} key="list-loadmore-more">
-                            <a key="list-loadmore-more">
-                                操作 <DownOutlined />
-                            </a>
-                        </Dropdown>,
-                    ]}
-                >
-                    <List.Item.Meta
-                        avatar={<Avatar src="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" />}
-                        title={<a href="https://ant.design">{item.user}</a>}
-                        description={item.time}
-                    />
-                    <div>{item.content}</div>
-                </List.Item>
-            )}
-        />
-    );
-}
 function App(): JSX.Element {
-    const callback = () => {
-        console.log('callback');
-    };
+    const [todoList, setTodoList] = useState(todoListData);
 
-    const onFinish = () => {
-        console.log('onFinish');
+    const callback = () => {};
+
+    const onFinish = (values: any) => {
+        const newTodo = { ...values.todo, isCompleted: false };
+        setTodoList(todoList.concat(newTodo));
     };
     const ref = useRef(null);
 
+    const activeTodoList = todoList.filter((todo) => !todo.isCompleted);
+    const completedTodoList = todoList.filter((todo) => todo.isCompleted);
+    const onClick = (todoId: string, key: 'complete' | 'delete') => {
+        if (key === 'complete') {
+            const newTodoList = todoList.map((todo) => {
+                if (todo.id === todoId) {
+                    return { ...todo, isCompleted: !todo.isCompleted };
+                }
+
+                return todo;
+            });
+
+            setTodoList(newTodoList);
+        } else if (key === 'delete') {
+            const newTodoList = todoList.filter((todo) => todo.id !== todoId);
+            setTodoList(newTodoList);
+        }
+    };
     return (
         <div className="App" ref={ref}>
             <div className="container header">
@@ -72,13 +64,13 @@ function App(): JSX.Element {
             <div className="container">
                 <Tabs onChange={callback} type="card">
                     <TabPane tab="所有" key="1">
-                        <TodoList />
+                        <TodoList todoList={todoList} onClick={onClick} />
                     </TabPane>
                     <TabPane tab="进行中" key="2">
-                        <TodoList />
+                        <TodoList todoList={activeTodoList} onClick={onClick} />
                     </TabPane>
                     <TabPane tab="已完成" key="3">
-                        <TodoList />
+                        <TodoList todoList={completedTodoList} onClick={onClick} />
                     </TabPane>
                 </Tabs>
             </div>
